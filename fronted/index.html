@@ -1,0 +1,1024 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f8f9fc">
+
+    <title>Talk2Doc — Chat with your documents</title>
+
+    <style>
+        /* ---------- 1. Global styles ---------- */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #f8f9fc;
+            --surface: #ffffff;
+            --text: #202438;
+            --muted: #7c8195;
+            --border: #e8eaf1;
+            --primary: #6558e8;
+            --primary-light: #f0efff;
+            --radius: 16px;
+        }
+
+        body {
+            font-family: Inter, "Segoe UI", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        button, input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        /* ---------- 2. Main layout ---------- */
+
+        .app {
+            display: grid;
+            grid-template-columns: 270px minmax(0, 1fr);
+            min-height: 100vh;
+        }
+
+        /* ---------- 3. Sidebar ---------- */
+
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 28px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--primary);
+            color: white;
+            border-radius: 13px;
+            display: grid;
+            place-items: center;
+            font-size: 23px;
+        }
+
+        .brand h1 {
+            font-size: 20px;
+            letter-spacing: -0.7px;
+        }
+
+        .brand p {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            color: var(--muted);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            margin-bottom: 13px;
+        }
+
+        .new-chat {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 11px;
+            padding: 13px;
+            font-weight: 600;
+        }
+
+        .new-chat:hover,
+        .upload-button:hover,
+        .send-button:hover {
+            opacity: 0.9;
+        }
+
+        .document-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .empty-documents {
+            font-size: 13px;
+            color: var(--muted);
+            line-height: 1.7;
+            padding: 12px;
+            background: #fafaff;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+        }
+
+        .document-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px;
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            overflow: hidden;
+        }
+
+        .document-item .file-icon {
+            font-size: 21px;
+        }
+
+        .document-item .file-name {
+            font-size: 12px;
+            overflow-wrap: anywhere;
+        }
+
+        .document-item .file-status {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 4px;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 14px;
+            background: var(--primary-light);
+            border-radius: 12px;
+            font-size: 12px;
+            line-height: 1.7;
+            color: #5148b6;
+        }
+
+        /* ---------- 4. Main workspace ---------- */
+
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            height: 76px;
+            padding: 0 35px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .topbar h2 {
+            font-size: 16px;
+            font-weight: 650;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #e7a33e;
+            border-radius: 50%;
+        }
+
+        /* ---------- 5. Chat area ---------- */
+
+        .chat-area {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 35px 28px 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .welcome {
+            text-align: center;
+            margin: auto 0;
+            padding: 30px 0;
+        }
+
+        .welcome-icon {
+            width: 72px;
+            height: 72px;
+            margin: 0 auto 22px;
+            display: grid;
+            place-items: center;
+            border-radius: 22px;
+            background: var(--primary-light);
+            font-size: 34px;
+        }
+
+        .welcome h2 {
+            font-size: clamp(25px, 4vw, 34px);
+            letter-spacing: -1px;
+            margin-bottom: 12px;
+        }
+
+        .welcome > p {
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.8;
+            max-width: 440px;
+            margin: 0 auto;
+        }
+
+        /* ---------- 6. Upload card ---------- */
+
+        .upload-card {
+            max-width: 480px;
+            margin: 28px auto 0;
+            width: 100%;
+            padding: 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            text-align: left;
+        }
+
+        .upload-card h3 {
+            font-size: 14px;
+            margin-bottom: 7px;
+        }
+
+        .upload-card > p {
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.7;
+            margin-bottom: 17px;
+        }
+
+        .dropzone {
+            border: 1.5px dashed #c9c5f6;
+            border-radius: 13px;
+            background: #fbfaff;
+            padding: 23px 15px;
+            text-align: center;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .dropzone.dragging {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .upload-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .dropzone p {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.8;
+        }
+
+        .dropzone strong {
+            color: var(--text);
+        }
+
+        .browse-button {
+            margin-top: 13px;
+            padding: 9px 15px;
+            background: var(--surface);
+            color: var(--primary);
+            border: 1px solid #dcd8ff;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 650;
+        }
+
+        .upload-button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .upload-button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .notice {
+            font-size: 11px;
+            line-height: 1.6;
+            color: var(--muted);
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        /* ---------- 7. Messages ---------- */
+
+        .messages {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 10px 0 25px;
+        }
+
+        .message {
+            display: flex;
+            gap: 11px;
+            align-items: flex-start;
+            max-width: 100%;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .avatar {
+            flex: 0 0 34px;
+            height: 34px;
+            display: grid;
+            place-items: center;
+            border-radius: 11px;
+            background: var(--primary-light);
+            font-size: 16px;
+        }
+
+        .message.user .avatar {
+            background: #e9edf7;
+            order: 2;
+        }
+
+        .bubble {
+            max-width: min(80%, 600px);
+            padding: 13px 16px;
+            border: 1px solid var(--border);
+            background: white;
+            border-radius: 4px 14px 14px 14px;
+            font-size: 13px;
+            line-height: 1.8;
+            overflow-wrap: anywhere;
+            white-space: pre-wrap;
+        }
+
+        .message.user .bubble {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            border-radius: 14px 4px 14px 14px;
+        }
+
+        .bubble .message-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            opacity: 0.7;
+        }
+
+        /* ---------- 8. Chat composer ---------- */
+
+        .composer-wrap {
+            position: sticky;
+            bottom: 0;
+            background: var(--bg);
+            padding: 14px 0 8px;
+        }
+
+        .composer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px;
+            border: 1px solid #dedfeb;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px #20243808;
+        }
+
+        .composer input {
+            min-width: 0;
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 9px;
+            font-size: 13px;
+            background: transparent;
+            color: var(--text);
+        }
+
+        .composer input::placeholder {
+            color: #a2a5b5;
+        }
+
+        .send-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 11px;
+            background: var(--primary);
+            color: white;
+            font-size: 19px;
+        }
+
+        .send-button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .disclaimer {
+            text-align: center;
+            font-size: 10px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-top: 12px;
+        }
+
+        /* ---------- 9. Responsive layout ---------- */
+
+        @media (max-width: 760px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                padding: 15px 18px;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+                gap: 14px;
+            }
+
+            .brand-icon {
+                width: 36px;
+                height: 36px;
+            }
+
+            .sidebar .section-label,
+            .sidebar-footer {
+                display: none;
+            }
+
+            .sidebar .new-chat {
+                display: none;
+            }
+
+            .document-list {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .document-item {
+                flex: 1;
+                min-width: 140px;
+            }
+
+            .topbar {
+                height: 60px;
+                padding: 0 18px;
+            }
+
+            .chat-area {
+                padding: 20px 16px;
+                min-height: 65vh;
+            }
+
+            .welcome {
+                margin: auto 0;
+            }
+
+            .upload-card {
+                padding: 17px;
+            }
+
+            .bubble {
+                max-width: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+
+            <div class="brand">
+                <div class="brand-icon">✳</div>
+                <div>
+                    <h1>Talk2Doc</h1>
+                    <p>Your documents, understood.</p>
+                </div>
+            </div>
+
+            <button class="new-chat" id="newChatButton">
+                + New conversation
+            </button>
+
+            <section>
+                <p class="section-label">Your documents</p>
+
+                <div class="document-list" id="documentList">
+                    <div class="empty-documents" id="emptyDocuments">
+                        Your uploaded documents will appear here.
+                    </div>
+                </div>
+            </section>
+
+            <div class="sidebar-footer">
+                <strong>How it works</strong><br>
+                Upload a document, ask a question, and get answers grounded in its content.
+            </div>
+
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <main class="workspace">
+
+            <header class="topbar">
+                <h2>Document chat</h2>
+
+                <div class="connection-status">
+                    <span class="status-dot"></span>
+                    <span id="connectionText">Frontend ready</span>
+                </div>
+            </header>
+
+            <section class="chat-area">
+
+                <!-- WELCOME / UPLOAD SCREEN -->
+                <div class="welcome" id="welcomeScreen">
+
+                    <div class="welcome-icon">📚</div>
+
+                    <h2>Let's talk about your documents.</h2>
+
+                    <p>
+                        Upload a PDF or Word document to get started.
+                        Your AI assistant will help you find answers
+                        without manually searching every page.
+                    </p>
+
+                    <div class="upload-card">
+
+                        <h3>Upload your document</h3>
+
+                        <p>
+                            Choose a PDF or DOCX file. Talk2Doc will index its content
+                            so you can ask questions about the document.
+                        </p>
+
+                        <div class="dropzone" id="dropzone">
+
+                            <div class="upload-icon">☁️</div>
+
+                            <p>
+                                <strong>Drag and drop your file here</strong><br>
+                                or select a file from your computer
+                            </p>
+
+                            <input
+                                type="file"
+                                id="fileInput"
+                                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                                hidden
+                            >
+
+                            <button
+                                type="button"
+                                class="browse-button"
+                                id="browseButton"
+                            >
+                                Browse files
+                            </button>
+
+                            <p id="fileInfo" aria-live="polite">
+                                PDF or DOCX · Maximum 10 MB
+                            </p>
+
+                        </div>
+
+                        <button
+                            type="button"
+                            class="upload-button"
+                            id="uploadButton"
+                            disabled
+                        >
+                            Upload document
+                        </button>
+
+                        <p class="notice" id="uploadNotice" aria-live="polite">
+                            Select a PDF or DOCX file to begin.
+                        </p>
+
+                    </div>
+                </div>
+
+                <!-- CHAT MESSAGES -->
+                <div
+                    class="messages"
+                    id="messages"
+                    aria-live="polite"
+                    hidden
+                ></div>
+
+                <!-- CHAT INPUT -->
+                <div class="composer-wrap">
+
+                    <form class="composer" id="chatForm">
+
+                        <input
+                            type="text"
+                            id="messageInput"
+                            placeholder="Upload a document to start asking questions..."
+                            aria-label="Your question"
+                            autocomplete="off"
+                            disabled
+                        >
+
+                        <button
+                            class="send-button"
+                            id="sendButton"
+                            type="submit"
+                            aria-label="Send message"
+                            disabled
+                        >
+                            ↑
+                        </button>
+
+                    </form>
+
+                    <p class="disclaimer">
+                        Answers are generated from relevant passages retrieved from your document.
+                    </p>
+
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script>
+        // ---------- 1. Get references to HTML elements ----------
+        const fileInput = document.getElementById("fileInput");
+        const browseButton = document.getElementById("browseButton");
+        const uploadButton = document.getElementById("uploadButton");
+        const uploadNotice = document.getElementById("uploadNotice");
+        const fileInfo = document.getElementById("fileInfo");
+        const dropzone = document.getElementById("dropzone");
+
+        const documentList = document.getElementById("documentList");
+        const welcomeScreen = document.getElementById("welcomeScreen");
+        const messages = document.getElementById("messages");
+
+        const chatForm = document.getElementById("chatForm");
+        const messageInput = document.getElementById("messageInput");
+        const sendButton = document.getElementById("sendButton");
+        const newChatButton = document.getElementById("newChatButton");
+        const connectionText = document.getElementById("connectionText");
+
+        // Keep this URL aligned with the address where FastAPI is running.
+        const API_BASE_URL = "http://127.0.0.1:8000";
+        const MAX_FILE_SIZE = 10 * 1024 * 1024;
+        const ALLOWED_EXTENSIONS = [".pdf", ".docx"];
+
+        // ---------- 2. Frontend state ----------
+        let selectedFile = null;
+        let currentDocumentId = null;
+        let isUploading = false;
+        let isAsking = false;
+
+        // ---------- 3. File picker and validation ----------
+        browseButton.addEventListener("click", () => {
+            if (!isUploading) fileInput.click();
+        });
+
+        fileInput.addEventListener("change", () => {
+            const file = fileInput.files && fileInput.files[0];
+            if (file) validateFile(file);
+        });
+
+        function validateFile(file) {
+            const fileName = file.name.toLowerCase();
+            const validExtension = ALLOWED_EXTENSIONS.some(extension =>
+                fileName.endsWith(extension)
+            );
+
+            if (!validExtension) {
+                selectedFile = null;
+                uploadButton.disabled = true;
+                fileInfo.textContent = "Please select a PDF or DOCX file.";
+                uploadNotice.textContent = "Unsupported file type.";
+                fileInput.value = "";
+                return;
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                selectedFile = null;
+                uploadButton.disabled = true;
+                fileInfo.textContent = "This file exceeds the 10 MB limit.";
+                uploadNotice.textContent = "Please select a smaller file.";
+                fileInput.value = "";
+                return;
+            }
+
+            selectedFile = file;
+            uploadButton.disabled = isUploading;
+            fileInfo.textContent = `${file.name} · ${formatFileSize(file.size)}`;
+            uploadNotice.textContent = "File selected. Ready to upload.";
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024 * 1024) {
+                return `${(bytes / 1024).toFixed(1)} KB`;
+            }
+            return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        // ---------- 4. Drag and drop ----------
+        dropzone.addEventListener("dragover", event => {
+            event.preventDefault();
+            if (!isUploading) dropzone.classList.add("dragging");
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+            dropzone.classList.remove("dragging");
+        });
+
+        dropzone.addEventListener("drop", event => {
+            event.preventDefault();
+            dropzone.classList.remove("dragging");
+
+            if (isUploading) return;
+
+            const file = event.dataTransfer.files && event.dataTransfer.files[0];
+            if (!file) return;
+
+            // Keep the file input in sync with the dropped file where supported.
+            try {
+                const transfer = new DataTransfer();
+                transfer.items.add(file);
+                fileInput.files = transfer.files;
+            } catch (_) {
+                // Validation and upload can still use selectedFile if DataTransfer is unavailable.
+            }
+            validateFile(file);
+        });
+
+        // ---------- 5. Upload document to FastAPI ----------
+        uploadButton.addEventListener("click", async () => {
+            if (!selectedFile || isUploading) return;
+
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            isUploading = true;
+            uploadButton.disabled = true;
+            browseButton.disabled = true;
+            fileInput.disabled = true;
+            newChatButton.disabled = true;
+            uploadNotice.textContent = "Uploading, extracting, embedding, and indexing your document...";
+            connectionText.textContent = "Connecting to backend...";
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await readApiResponse(response);
+
+                if (!response.ok) {
+                    throw new Error(result.detail || "Document upload failed.");
+                }
+
+                if (!result.document_id) {
+                    throw new Error("The backend did not return a document_id.");
+                }
+
+                // Save the ID so all future questions target this exact document.
+                currentDocumentId = result.document_id;
+
+                // Update the sidebar document list.
+                const emptyDocuments = document.getElementById("emptyDocuments");
+                if (emptyDocuments) emptyDocuments.remove();
+
+                const item = document.createElement("div");
+                item.className = "document-item";
+
+                const icon = document.createElement("span");
+                icon.className = "file-icon";
+                icon.textContent = result.file_type === "pdf" ? "📕" : "📘";
+
+                const details = document.createElement("div");
+                const name = document.createElement("p");
+                name.className = "file-name";
+                name.textContent = result.filename || selectedFile.name;
+
+                const status = document.createElement("p");
+                status.className = "file-status";
+                status.textContent = `${result.chunk_count ?? "—"} chunks indexed`;
+
+                details.append(name, status);
+                item.append(icon, details);
+                documentList.appendChild(item);
+
+                // Enter chat mode; do not dump the full extracted text into the chat.
+                welcomeScreen.hidden = true;
+                messages.hidden = false;
+                addMessage(
+                    "assistant",
+                    `Document "${result.filename || selectedFile.name}" is ready.\n\n` +
+                    "I've processed and indexed its content. Ask a question to get a focused answer."
+                );
+
+                messageInput.disabled = false;
+                messageInput.placeholder = "Ask something about your document...";
+                messageInput.focus();
+                sendButton.disabled = !messageInput.value.trim();
+
+                uploadNotice.textContent = "Document processed and ready for questions.";
+                connectionText.textContent = "Backend connected";
+            } catch (error) {
+                uploadNotice.textContent = `Upload failed: ${error.message}`;
+                connectionText.textContent = "Connection or upload error";
+                uploadButton.disabled = !selectedFile;
+            } finally {
+                isUploading = false;
+                browseButton.disabled = false;
+                fileInput.disabled = false;
+                newChatButton.disabled = false;
+            }
+        });
+
+        // Parse JSON safely and preserve useful backend error messages.
+        async function readApiResponse(response) {
+            let result;
+            try {
+                result = await response.json();
+            } catch (_) {
+                throw new Error(`Backend returned an unreadable response (HTTP ${response.status}).`);
+            }
+            return result;
+        }
+
+        // ---------- 6. Display messages safely ----------
+        function addMessage(role, text) {
+            const message = document.createElement("div");
+            message.className = `message ${role}`;
+
+            const avatar = document.createElement("div");
+            avatar.className = "avatar";
+            avatar.textContent = role === "user" ? "👤" : "✳";
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            const label = document.createElement("span");
+            label.className = "message-label";
+            label.textContent = role === "user" ? "You" : "Talk2Doc";
+
+            const content = document.createElement("div");
+            content.textContent = text;
+
+            bubble.append(label, content);
+            message.append(avatar, bubble);
+            messages.appendChild(message);
+            message.scrollIntoView({ behavior: "smooth", block: "end" });
+
+            return message;
+        }
+
+        // ---------- 7. Ask a question through POST /chat ----------
+        messageInput.addEventListener("input", () => {
+            sendButton.disabled = !messageInput.value.trim() || isAsking || !currentDocumentId;
+        });
+
+        chatForm.addEventListener("submit", async event => {
+            event.preventDefault();
+
+            const question = messageInput.value.trim();
+            if (!question || !currentDocumentId || isAsking) return;
+
+            isAsking = true;
+            sendButton.disabled = true;
+            messageInput.disabled = true;
+            newChatButton.disabled = true;
+
+            addMessage("user", question);
+            messageInput.value = "";
+
+            const loadingMessage = addMessage(
+                "assistant",
+                "Searching the document and generating an answer..."
+            );
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        document_id: currentDocumentId,
+                        question: question
+                    })
+                });
+
+                const result = await readApiResponse(response);
+                if (!response.ok) {
+                    throw new Error(result.detail || "Could not answer the question.");
+                }
+
+                loadingMessage.remove();
+
+                let answerText = result.answer || "The model returned no answer.";
+                if (Array.isArray(result.sources) && result.sources.length > 0) {
+                    const sourceText = result.sources.map(source => {
+                        const chunkNumber = Number.isInteger(Number(source.chunk_index))
+                            ? Number(source.chunk_index) + 1
+                            : source.chunk_index;
+                        return `• ${source.filename || "Document"}, chunk ${chunkNumber}`;
+                    }).join("\n");
+                    answerText += `\n\nSources retrieved:\n${sourceText}`;
+                }
+
+                addMessage("assistant", answerText);
+            } catch (error) {
+                loadingMessage.remove();
+                addMessage("assistant", `I couldn't answer that question. ${error.message}`);
+            } finally {
+                isAsking = false;
+                newChatButton.disabled = false;
+                messageInput.disabled = !currentDocumentId;
+                sendButton.disabled = !messageInput.value.trim() || !currentDocumentId;
+                if (currentDocumentId) messageInput.focus();
+            }
+        });
+
+        // ---------- 8. Start a new conversation ----------
+        newChatButton.addEventListener("click", () => {
+            if (isUploading || isAsking) return;
+
+            currentDocumentId = null;
+            selectedFile = null;
+            fileInput.value = "";
+            fileInput.disabled = false;
+
+            uploadButton.disabled = true;
+            browseButton.disabled = false;
+            uploadNotice.textContent = "Select a PDF or DOCX file to begin.";
+            fileInfo.textContent = "PDF or DOCX · Maximum 10 MB";
+
+            messages.replaceChildren();
+            messages.hidden = true;
+            welcomeScreen.hidden = false;
+
+            messageInput.value = "";
+            messageInput.disabled = true;
+            messageInput.placeholder = "Upload a document to start asking questions...";
+            sendButton.disabled = true;
+
+            documentList.replaceChildren();
+            const empty = document.createElement("div");
+            empty.className = "empty-documents";
+            empty.id = "emptyDocuments";
+            empty.textContent = "Your uploaded documents will appear here.";
+            documentList.appendChild(empty);
+
+            connectionText.textContent = "Frontend ready";
+        });
+    </script>
+
+</body>
+</html>
